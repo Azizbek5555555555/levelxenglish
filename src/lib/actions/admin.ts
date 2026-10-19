@@ -8,6 +8,7 @@ import type { ActionResult } from "./profile";
 import type { UserRole } from "@/lib/types";
 import { getPremiumPlans } from "@/lib/settings";
 import { planReviews } from "@/lib/premium";
+import { slugify } from "@/lib/slugify";
 
 export type { ActionResult };
 
@@ -50,6 +51,71 @@ function bool(formData: FormData, key: string): boolean {
 }
 
 /** JSON matnini xavfsiz o'qiydi */
+/* =========================================================================
+   SLUG — sahifa manzili. Bo'sh qoldirilsa sarlavhadan o'zi yasaladi.
+   ========================================================================= */
+const SLUG_ERROR =
+  "Slug faqat kichik lotin harflari, raqam va '-' dan iborat bo'lsin (yoki bo'sh qoldiring — nomidan o'zi yasaladi).";
+const SLUG_TAKEN = "Bu slug (sahifa manzili) band. Boshqasini yozing yoki bo'sh qoldiring.";
+
+function slugInput(formData: FormData, title: string): { slug: string; auto: boolean } {
+  const raw = str(formData, "slug").toLowerCase();
+  return raw ? { slug: raw, auto: false } : { slug: slugify(title), auto: true };
+}
+
+/** Avtomatik yasalgan slug band bo'lsa, oxiriga -2, -3 … qo'shiladi */
+async function freeSlug(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  table: "test_sets" | "articles" | "vocab_packs" | "courses",
+  slug: string,
+  id: string | null,
+): Promise<string> {
+  for (let i = 1; i <= 30; i++) {
+    const candidate = i === 1 ? slug : `${slug}-${i}`;
+    const { data } = await supabase.from(table).select("id").eq("slug", candidate).maybeSingle();
+    if (!data || (id && (data as { id: string }).id === id)) return candidate;
+  }
+  return `${slug}-${Date.now().toString(36)}`;
+}
+
+const dbError = (error: { code?: string; message: string }) =>
+  error.code === "23505" ? SLUG_TAKEN : error.message;
+
+/** Savol saqlanishidan oldin: o'qituvchi to'g'ri javobni belgilashni unutmaganini tekshiradi */
+function answerProblem(kind: string, options: unknown, correct: unknown): string | null {
+  const list = Array.isArray(options) ? options : [];
+  switch (kind) {
+    case "mcq":
+      if (list.length < 2) return "Kamida 2 ta variant yozing.";
+      if (typeof correct !== "string" || !correct.trim())
+        return "To'g'ri javobni belgilang (variant yonidagi doirachani bosing).";
+      return null;
+    case "multi_select":
+      if (list.length < 2) return "Kamida 2 ta variant yozing.";
+      if (!Array.isArray(correct) || correct.length === 0) return "Kamida bitta to'g'ri javobni belgilang.";
+      return null;
+    case "true_false_ng":
+      if (typeof correct !== "string" || !correct.trim()) return "To'g'ri javobni tanlang (masalan TRUE / FALSE / NOT GIVEN).";
+      return null;
+    case "gap_fill":
+    case "short_answer":
+      if (typeof correct === "string" ? !correct.trim() : !(Array.isArray(correct) && correct.length > 0))
+        return "To'g'ri javobni yozing.";
+      return null;
+    case "matching": {
+      if (list.length === 0) return "Kamida bitta moslashtiriladigan qator yozing.";
+      const right = (list[0] as { right?: unknown }).right;
+      if (!Array.isArray(right) || right.length < 2) return "Tanlanadigan javoblardan kamida 2 tasini yozing.";
+      const answers = correct && typeof correct === "object" && !Array.isArray(correct) ? (correct as Record<string, unknown>) : {};
+      if (list.some((row) => !answers[String((row as { left?: unknown }).left ?? "")]))
+        return "Har bir qator uchun to'g'ri javobni tanlang.";
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
 function parseJson(raw: string, fallback: unknown = null): unknown {
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
@@ -329,15 +395,10 @@ export async function upsertTestSetAction(
   if (denied) return denied;
 
   const id = optStr(formData, "id");
-  const slug = str(formData, "slug");
   const title = str(formData, "title");
-
-  if (!slug || !/^[a-z0-9-]+$/.test(slug))
-    return {
-      ok: false,
-      message: "Slug faqat kichik lotin harflari, raqam va '-' dan iborat bo'lsin.",
-    };
   if (title.length < 3) return { ok: false, message: "Sarlavhani kiriting." };
+  const { slug, auto } = slugInput(formData, title);
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return { ok: false, message: SLUG_ERROR };
 
   const payload = {
     slug,
@@ -355,12 +416,13 @@ export async function upsertTestSetAction(
 
   try {
     const supabase = await createServerSupabase();
+    if (auto) payload.slug = await freeSlug(supabase, "test_sets", slug, id);
     const query = id
       ? supabase.from("test_sets").update(payload).eq("id", id)
       : supabase.from("test_sets").insert(payload);
 
     const { error } = await query;
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: dbError(error) };
   } catch (error) {
     return { ok: false, message: describeError(error) };
   }
@@ -516,6 +578,8 @@ export async function upsertQuestionAction(
       ok: false,
       message: 'To\'g\'ri javob JSON formatida bo\'lsin. Misol: "B" yoki ["colour","color"]',
     };
+  const problem = answerProblem(kind, options, correct);
+  if (problem) return { ok: false, message: problem };
 
   const payload = {
     part_id: partId,
@@ -570,14 +634,13 @@ export async function upsertArticleAction(
   if (denied) return denied;
 
   const id = optStr(formData, "id");
-  const slug = str(formData, "slug");
   const title = str(formData, "title");
   const body = str(formData, "body");
 
-  if (!slug || !/^[a-z0-9-]+$/.test(slug))
-    return { ok: false, message: "Slug noto'g'ri formatda." };
   if (title.length < 3) return { ok: false, message: "Sarlavhani kiriting." };
-  if (body.length < 20) return { ok: false, message: "Maqola matnini kiriting." };
+  const { slug, auto } = slugInput(formData, title);
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return { ok: false, message: SLUG_ERROR };
+  if (body.replace(/<[^>]*>/g, "").trim().length < 20) return { ok: false, message: "Maqola matnini kiriting." };
 
   const vocabulary = parseJson(str(formData, "vocabulary"), []);
   if (vocabulary === undefined)
@@ -604,12 +667,13 @@ export async function upsertArticleAction(
 
   try {
     const supabase = await createServerSupabase();
+    if (auto) payload.slug = await freeSlug(supabase, "articles", slug, id);
     const query = id
       ? supabase.from("articles").update(payload).eq("id", id)
       : supabase.from("articles").insert(payload);
 
     const { error } = await query;
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: dbError(error) };
   } catch (error) {
     return { ok: false, message: describeError(error) };
   }
@@ -649,6 +713,8 @@ export async function upsertArticleQuestionAction(
 
   if (options === undefined || correct === undefined)
     return { ok: false, message: "Variantlar yoki javob JSON formatida emas." };
+  const problem = answerProblem(str(formData, "kind"), options, correct);
+  if (problem) return { ok: false, message: problem };
 
   const payload = {
     article_id: articleId,
@@ -703,12 +769,10 @@ export async function upsertVocabPackAction(
   if (denied) return denied;
 
   const id = optStr(formData, "id");
-  const slug = str(formData, "slug");
   const title = str(formData, "title");
-
-  if (!slug || !/^[a-z0-9-]+$/.test(slug))
-    return { ok: false, message: "Slug noto'g'ri formatda." };
   if (title.length < 2) return { ok: false, message: "To'plam nomini kiriting." };
+  const { slug, auto } = slugInput(formData, title);
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return { ok: false, message: SLUG_ERROR };
 
   const payload = {
     slug,
@@ -723,12 +787,13 @@ export async function upsertVocabPackAction(
 
   try {
     const supabase = await createServerSupabase();
+    if (auto) payload.slug = await freeSlug(supabase, "vocab_packs", slug, id);
     const query = id
       ? supabase.from("vocab_packs").update(payload).eq("id", id)
       : supabase.from("vocab_packs").insert(payload);
 
     const { error } = await query;
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: dbError(error) };
   } catch (error) {
     return { ok: false, message: describeError(error) };
   }
@@ -769,14 +834,14 @@ export async function upsertVocabWordAction(
   if (options === undefined || !Array.isArray(options) || options.length < 2)
     return {
       ok: false,
-      message: 'Variantlar kamida 2 ta bo\'lsin. Misol: ["Maqsad","Yutuq","Imkoniyat","Mas\'uliyat"]',
+      message: "Kamida 2 ta variant yozing.",
     };
 
   const correctIndex = num(formData, "correct_index", 0);
   if (correctIndex < 0 || correctIndex >= options.length)
     return {
       ok: false,
-      message: `To'g'ri javob raqami 0 dan ${options.length - 1} gacha bo'lsin.`,
+      message: "To'g'ri tarjimani belgilang (variant yonidagi doirachani bosing).",
     };
 
   const payload = {
@@ -831,12 +896,10 @@ export async function upsertCourseAction(
   if (denied) return denied;
 
   const id = optStr(formData, "id");
-  const slug = str(formData, "slug");
   const title = str(formData, "title");
-
-  if (!slug || !/^[a-z0-9-]+$/.test(slug))
-    return { ok: false, message: "Slug noto'g'ri formatda." };
   if (title.length < 3) return { ok: false, message: "Kurs nomini kiriting." };
+  const { slug, auto } = slugInput(formData, title);
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return { ok: false, message: SLUG_ERROR };
 
   const payload = {
     slug,
@@ -857,12 +920,13 @@ export async function upsertCourseAction(
 
   try {
     const supabase = await createServerSupabase();
+    if (auto) payload.slug = await freeSlug(supabase, "courses", slug, id);
     const query = id
       ? supabase.from("courses").update(payload).eq("id", id)
       : supabase.from("courses").insert(payload);
 
     const { error } = await query;
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: dbError(error) };
   } catch (error) {
     return { ok: false, message: describeError(error) };
   }

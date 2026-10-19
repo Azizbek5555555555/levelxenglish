@@ -1,10 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ActionResult } from "@/lib/actions/profile";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Card";
+import { UploadField } from "./UploadField";
+import { RichTextField } from "./RichTextField";
+import { ChoicesField, QuestionEditor, WordListField } from "./QuestionEditor";
 
 export type FieldType =
   | "text"
@@ -13,7 +16,19 @@ export type FieldType =
   | "select"
   | "checkbox"
   | "json"
-  | "hidden";
+  | "hidden"
+  /** Kompyuterdan audio yuklash (manzil `name` maydoniga yoziladi) */
+  | "audio"
+  /** Kompyuterdan rasm yuklash */
+  | "image"
+  /** Word'dagidek matn muharriri (HTML `name` maydoniga yoziladi) */
+  | "richtext"
+  /** Savol turi + variantlar + to'g'ri javob (kind, options, correct_answer) */
+  | "question"
+  /** 4 ta variant va to'g'risi (options, correct_index) */
+  | "choices"
+  /** So'z — ma'nosi — misol ro'yxati (JSON) */
+  | "wordlist";
 
 export interface AdminField {
   name: string;
@@ -27,7 +42,13 @@ export interface AdminField {
   rows?: number;
   /** Ikki ustunli tarmoqda kengligi */
   full?: boolean;
+  /** Yuklanadigan fayllar papkasi (audio / image) */
+  folder?: string;
+  /** "question" / "choices" uchun boshlang'ich variantlar va to'g'ri javob */
+  extra?: { options?: unknown; correct?: unknown; correctIndex?: number };
 }
+
+const WIDE: FieldType[] = ["textarea", "json", "audio", "image", "richtext", "question", "choices", "wordlist"];
 
 export type AdminAction = (
   prev: ActionResult | null,
@@ -51,15 +72,19 @@ export function AdminForm({
   resetOnSuccess?: boolean;
   compact?: boolean;
 }) {
+  // Yangi yozuv qo'shilgach forma (ichidagi variantlar, yuklangan fayl ham) tozalanadi
+  const [resets, setResets] = useState(0);
   const [state, formAction, pending] = useActionState<
     ActionResult | null,
     FormData
-  >(action, null);
-
-  const key = resetOnSuccess && state?.ok ? "reset" : "form";
+  >(async (prev, formData) => {
+    const result = await action(prev, formData);
+    if (resetOnSuccess && result.ok) setResets((n) => n + 1);
+    return result;
+  }, null);
 
   return (
-    <form action={formAction} key={key} className="space-y-4">
+    <form action={formAction} key={resets} className="space-y-4">
       {state ? (
         <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert>
       ) : null}
@@ -78,10 +103,27 @@ export function AdminForm({
           }
 
           const id = `f-${field.name}`;
-          const wrapperClass =
-            !compact && (field.full || field.type === "textarea" || field.type === "json")
-              ? "sm:col-span-2"
-              : undefined;
+          const wrapperClass = !compact && (field.full || WIDE.includes(field.type)) ? "sm:col-span-2" : undefined;
+
+          if (field.type === "question") {
+            return (
+              <div key={field.name} className={wrapperClass}>
+                <QuestionEditor
+                  kinds={field.options ?? []}
+                  defaultKind={String(field.defaultValue ?? "")}
+                  defaultOptions={field.extra?.options}
+                  defaultCorrect={field.extra?.correct}
+                />
+              </div>
+            );
+          }
+          if (field.type === "choices") {
+            return (
+              <div key={field.name} className={wrapperClass}>
+                <ChoicesField defaultOptions={field.extra?.options} defaultCorrectIndex={field.extra?.correctIndex} />
+              </div>
+            );
+          }
 
           return (
             <div key={field.name} className={wrapperClass}>
@@ -102,7 +144,22 @@ export function AdminForm({
                   required={field.required}
                   hint={field.hint}
                 >
-                  {field.type === "textarea" || field.type === "json" ? (
+                  {field.type === "audio" || field.type === "image" ? (
+                    <UploadField
+                      name={field.name}
+                      kind={field.type}
+                      defaultValue={field.defaultValue == null ? "" : String(field.defaultValue)}
+                      folder={field.folder ?? "uploads"}
+                    />
+                  ) : field.type === "richtext" ? (
+                    <RichTextField
+                      name={field.name}
+                      defaultValue={field.defaultValue == null ? "" : String(field.defaultValue)}
+                      placeholder={field.placeholder}
+                    />
+                  ) : field.type === "wordlist" ? (
+                    <WordListField name={field.name} defaultValue={field.defaultValue} />
+                  ) : field.type === "textarea" || field.type === "json" ? (
                     <Textarea
                       id={id}
                       name={field.name}

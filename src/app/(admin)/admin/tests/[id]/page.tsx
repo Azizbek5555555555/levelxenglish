@@ -144,7 +144,7 @@ export default async function AdminTestDetailPage({
       >
         <AdminForm
           action={upsertTestPartAction}
-          fields={testPartFields(testSet.id)}
+          fields={testPartFields(testSet.id, { order_index: parts.length + 1 })}
           submitLabel="Bo'limni qo'shish"
           resetOnSuccess
         />
@@ -240,12 +240,12 @@ export default async function AdminTestDetailPage({
 
                   <Collapsible
                     title="➕ Savol qo'shish"
-                    subtitle="MCQ · True/False/NG · Gap filling · Matching · Essay · Speaking"
+                    subtitle="Variantli · True/False · Bo'sh joy · Moslashtirish · Writing · Speaking"
                     tone="accent"
                   >
                     <AdminForm
                       action={upsertQuestionAction}
-                      fields={questionFields(part.id, testSet.id)}
+                      fields={questionFields(part.id, testSet.id, { order_index: partQuestions.length + 1 })}
                       submitLabel="Savolni qo'shish"
                       resetOnSuccess
                     />
@@ -313,5 +313,9 @@ function truncate(text: string, length: number): string {
 function formatAnswer(value: unknown): string {
   if (value == null) return "qo'lda tekshiriladi";
   if (typeof value === "string") return value || "—";
-  return JSON.stringify(value);
+  // ["colour","color"] → colour / color · {"1":"C","2":"A"} → 1→C, 2→A
+  if (Array.isArray(value)) return value.map(String).join(" / ") || "—";
+  if (typeof value === "object")
+    return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}→${String(v)}`).join(", ") || "—";
+  return String(value);
 }
