@@ -42,6 +42,16 @@ export default async function GradingDetailPage({
 
   const feedback = attempt.teacher_feedback ?? {};
 
+  // Speaking: har bir bo'limda nechta savolga javob berilgani — o'qituvchi bo'lim uchun
+  // bitta umumiy baho qo'yadi, javobsiz savol bo'lsa shuni hisobga oladi
+  const speakingStats = new Map<string, { answered: number; total: number }>();
+  for (const question of speakingQuestions) {
+    const stat = speakingStats.get(question.partTitle) ?? { answered: 0, total: 0 };
+    stat.total += 1;
+    if (question.audioPath || question.answerText.trim()) stat.answered += 1;
+    speakingStats.set(question.partTitle, stat);
+  }
+
   return (
     <div className="space-y-6">
       <Link
@@ -115,10 +125,10 @@ export default async function GradingDetailPage({
             <section>
               <h3 className="font-extrabold text-lg mb-3">✍️ Writing javoblari</h3>
               <div className="space-y-4">
-                {writingQuestions.map((question, i) => (
+                {writingQuestions.map((question) => (
                   <div key={question.id} className="card p-5">
                     <p className="text-xs font-bold text-muted uppercase tracking-wide">
-                      Task {i + 1} · {question.partTitle}
+                      {question.label}
                     </p>
                     <p className="font-semibold mt-1.5 leading-relaxed">
                       {question.prompt}
@@ -154,44 +164,60 @@ export default async function GradingDetailPage({
               <div className="space-y-4">
                 {speakingQuestions.map((question, i) => {
                   const url = audioUrls.get(question.id);
+                  const stat = speakingStats.get(question.partTitle);
+                  const firstOfPart = i === 0 || speakingQuestions[i - 1].partTitle !== question.partTitle;
                   return (
-                    <div key={question.id} className="card p-5">
-                      <p className="text-xs font-bold text-muted uppercase tracking-wide">
-                        Part {i + 1} · {question.partTitle}
-                      </p>
-                      <p className="font-semibold mt-1.5 leading-relaxed">
-                        {question.prompt}
-                      </p>
-
-                      {url ? (
-                        <audio
-                          src={url}
-                          controls
-                          preload="none"
-                          className="w-full mt-4"
-                        />
-                      ) : question.audioPath ? (
-                        <p className="text-sm text-warning mt-4">
-                          ⚠️ Audio mavjud, lekin havolani yaratib bo&apos;lmadi
-                          (SUPABASE_SERVICE_ROLE_KEY yoki &quot;speaking&quot;
-                          bucket tekshiring).
+                    <div key={question.id} className="space-y-2">
+                      {firstOfPart && stat ? (
+                        <p
+                          className={
+                            stat.answered < stat.total
+                              ? "text-sm font-semibold text-warning"
+                              : "text-sm font-semibold text-muted"
+                          }
+                        >
+                          {question.partTitle}: {stat.total} ta savoldan {stat.answered} tasiga javob bor
+                          {stat.answered < stat.total ? " — bo'lim bahosida buni hisobga oling" : ""}
                         </p>
-                      ) : (
-                        <p className="text-sm text-muted mt-4 italic">
-                          Audio yozilmagan.
-                        </p>
-                      )}
-
-                      {question.answerText ? (
-                        <div className="mt-4 rounded-xl border border-line bg-[var(--bg-subtle)] p-4">
-                          <p className="text-xs font-bold text-muted mb-1.5">
-                            Matn ko&apos;rinishidagi javob
-                          </p>
-                          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">
-                            {question.answerText}
-                          </p>
-                        </div>
                       ) : null}
+                      <div className="card p-5">
+                        <p className="text-xs font-bold text-muted uppercase tracking-wide">
+                          {question.label}
+                        </p>
+                        <p className="font-semibold mt-1.5 leading-relaxed">
+                          {question.prompt}
+                        </p>
+
+                        {url ? (
+                          <audio
+                            src={url}
+                            controls
+                            preload="none"
+                            className="w-full mt-4"
+                          />
+                        ) : question.audioPath ? (
+                          <p className="text-sm text-warning mt-4">
+                            ⚠️ Audio mavjud, lekin havolani yaratib bo&apos;lmadi
+                            (SUPABASE_SERVICE_ROLE_KEY yoki &quot;speaking&quot;
+                            bucket tekshiring).
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted mt-4 italic">
+                            Audio yozilmagan.
+                          </p>
+                        )}
+
+                        {question.answerText ? (
+                          <div className="mt-4 rounded-xl border border-line bg-[var(--bg-subtle)] p-4">
+                            <p className="text-xs font-bold text-muted mb-1.5">
+                              Matn ko&apos;rinishidagi javob
+                            </p>
+                            <p className="whitespace-pre-wrap leading-relaxed text-[15px]">
+                              {question.answerText}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}

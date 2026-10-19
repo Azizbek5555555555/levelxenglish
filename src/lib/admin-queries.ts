@@ -373,6 +373,8 @@ export interface GradingDetail {
     id: string;
     section: string;
     partTitle: string;
+    /** Ko'rinadigan nom: "Part 1.1 · 2-savol" (bo'limda bitta savol bo'lsa — faqat bo'lim nomi) */
+    label: string;
     kind: string;
     prompt: string;
     answerText: string;
@@ -439,14 +441,27 @@ export async function getGradingDetail(
     const partMap = new Map(partRows.map((p) => [p.id, p]));
     const answers = row.answers ?? {};
 
-    const manualQuestions = (
+    // Avval bo'lim tartibi, keyin bo'lim ichidagi savol tartibi (faqat savol raqami bo'yicha
+    // saralansa, har bo'limning 1-savollari birga chiqib, Part 1.1 va 1.2 aralashib ketardi)
+    const partPosition = new Map(partRows.map((p, i) => [p.id, i]));
+    const sorted = (
       (questions ?? []) as {
         id: string;
         part_id: string;
         kind: string;
         prompt: string;
+        order_index: number;
       }[]
-    ).map((question) => {
+    ).sort(
+      (a, b) =>
+        (partPosition.get(a.part_id) ?? 0) - (partPosition.get(b.part_id) ?? 0) ||
+        (a.order_index ?? 0) - (b.order_index ?? 0),
+    );
+    const perPart = new Map<string, number>();
+    for (const question of sorted) perPart.set(question.part_id, (perPart.get(question.part_id) ?? 0) + 1);
+    const seen = new Map<string, number>();
+
+    const manualQuestions = sorted.map((question) => {
       const part = partMap.get(question.part_id);
       const value = answers[question.id];
 
@@ -461,10 +476,14 @@ export async function getGradingDetail(
         audioPath = record.audio || null;
       }
 
+      const position = (seen.get(question.part_id) ?? 0) + 1;
+      seen.set(question.part_id, position);
+      const partTitle = part?.title ?? "";
       return {
         id: question.id,
         section: part?.section ?? "writing",
-        partTitle: part?.title ?? "",
+        partTitle,
+        label: (perPart.get(question.part_id) ?? 1) > 1 ? `${partTitle} · ${position}-savol` : partTitle,
         kind: question.kind,
         prompt: question.prompt,
         answerText,
