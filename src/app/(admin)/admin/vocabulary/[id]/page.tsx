@@ -79,7 +79,7 @@ export default async function AdminVocabPackPage({
       >
         <AdminForm
           action={upsertVocabWordAction}
-          fields={vocabWordFields(pack.id)}
+          fields={vocabWordFields(pack.id, { order_index: words.length + 1 })}
           submitLabel="So'zni qo'shish"
           resetOnSuccess
         />

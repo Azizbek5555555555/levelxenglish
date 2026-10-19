@@ -83,7 +83,7 @@ export default async function AdminArticleDetailPage({
       >
         <AdminForm
           action={upsertArticleQuestionAction}
-          fields={articleQuestionFields(article.id)}
+          fields={articleQuestionFields(article.id, { order_index: questions.length + 1 })}
           submitLabel="Savolni qo'shish"
           resetOnSuccess
         />
@@ -152,5 +152,9 @@ function truncate(text: string, length: number): string {
 function formatAnswer(value: unknown): string {
   if (value == null) return "—";
   if (typeof value === "string") return value || "—";
-  return JSON.stringify(value);
+  // ["colour","color"] → colour / color · {"1":"C","2":"A"} → 1→C, 2→A
+  if (Array.isArray(value)) return value.map(String).join(" / ") || "—";
+  if (typeof value === "object")
+    return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}→${String(v)}`).join(", ") || "—";
+  return String(value);
 }

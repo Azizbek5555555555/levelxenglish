@@ -516,26 +516,31 @@ Admin panel → chap menyu:
 1. **Testlar** → **➕ Yangi test qo'shish**
    - **Turkum:** `Full Mock` / `Oxirgi savollar` / `General English` /
      `Exam Checking`
-   - **Slug:** URL manzili, masalan `full-mock-5`
+   - **Slug:** sahifa manzili, masalan `full-mock-5`. Bo'sh qoldirsangiz,
+     sarlavhadan o'zi yasaladi
    - **Premium:** qulflansinmi yoki bepul bo'lsinmi
 2. Test yaratilgach → **Tahrirlash** → **➕ Yangi bo'lim qo'shish**
    - Full Mock uchun 4 ta bo'lim: Listening, Reading, Writing, Speaking
-   - Reading bo'limiga **matn**ni HTML sifatida qo'ying
-   - Listening bo'limiga **audio manzili**ni qo'ying (pastga qarang)
+   - Reading bo'limiga **matn**ni oddiy yozing yoki Word / Google Docs'dan
+     nusxalab qo'ying (Sarlavha, qalin, ro'yxat tugmalari bor)
+   - Listening audio va Writing Task 1 rasmi **🎧 / 🖼 Kompyuterdan yuklash**
+     tugmasi bilan yuklanadi — havola yozish shart emas
 3. Har bo'lim ichida → **➕ Savol qo'shish**
 
-#### Savol turlari va javob formati
+#### Savol turlari va javoblar
 
-| Savol turi | Variantlar (JSON) | To'g'ri javob (JSON) |
-|---|---|---|
-| Multiple choice | `["London","Paris","Rome"]` | `"Paris"` |
-| True/False/NG | `["TRUE","FALSE","NOT GIVEN"]` | `"FALSE"` |
-| Gap filling | `[]` | `["seven","7"]` ← bir necha variant qabul qilinadi |
-| Qisqa javob | `[]` | `["hippocampus"]` |
-| Bir nechta javob | `["A","B","C","D"]` | `["A","C"]` |
-| Matching | `[{"left":"1","label":"Singapore","right":["Rooftop","Community"]}]` | `{"1":"Rooftop"}` |
-| Essay (Writing) | `[]` | *bo'sh qoldiring* |
-| Speaking topic | `[]` | *bo'sh qoldiring* |
+Savol turini tanlang — forma o'zi kerakli maydonlarni ko'rsatadi:
+
+| Savol turi | Nima qilinadi |
+|---|---|
+| Multiple choice (1 javob) | Variantlarni yozing, to'g'risi yonidagi doirachani bosing |
+| Bir nechta javob | Variantlarni yozing, barcha to'g'rilarini belgilang |
+| True/False/NG | Javob turini tanlang (TRUE/FALSE/NOT GIVEN yoki YES/NO/NOT GIVEN), to'g'risini bosing |
+| Gap filling / Qisqa javob | To'g'ri javobni yozing; bir necha yozilishi bo'lsa har birini yangi qatorga (`seven` va `7`) |
+| Matching | Tanlanadigan javoblarni qatorma-qator yozing, har bir qatorga to'g'risini tanlang |
+| Essay (Writing) / Speaking | Faqat savol matni — o'qituvchi qo'lda tekshiradi |
+
+Saqlashda to'g'ri javob belgilanmagan bo'lsa, forma ogohlantiradi.
 
 > 💡 Gap filling va qisqa javobda **katta-kichik harf va ortiqcha probellar
 > hisobga olinmaydi** — `"Seven"`, `"seven "` va `"SEVEN"` bir xil qabul
@@ -560,14 +565,14 @@ Admin panel → chap menyu:
 ### 📰 Maqolalar
 
 **Maqolalar** → **➕ Yangi maqola** →
-matnni HTML sifatida yozing (`<p>`, `<h2>`, `<ul>`), yangi so'zlarni JSON
-sifatida qo'shing, keyin ichiga savollar qo'shing.
+matnni oddiy yozing yoki Word'dan nusxalab qo'ying, muqova rasmini kompyuterdan
+yuklang, yangi so'zlarni "So'z — ma'nosi — misol" qatorlariga yozing,
+keyin ichiga savollar qo'shing.
 
 ### 📘 Vocabulary
 
 **Vocabulary** → to'plam yarating → ichiga so'zlarni qo'shing.
-Har bir so'zda 4 ta variant va **to'g'ri variant raqami** (0, 1, 2 yoki 3)
-ko'rsatiladi.
+Har bir so'zga 4 ta variant yoziladi va to'g'risi yonidagi doirachani bosiladi.
 
 ### 🏫 Kurslar va ⚙️ Sozlamalar
 
