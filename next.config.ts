@@ -16,7 +16,8 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   // Fayl turini "taxmin qilish"ni taqiqlaydi (masalan, rasmni skript deb bajarish)
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Saytni boshqa saytlar <iframe> ichiga qo'ya olmaydi (clickjacking himoyasi)
+  // Saytni boshqa saytlar <iframe> ichiga qo'ya olmaydi (clickjacking himoyasi).
+  // Zamonaviy brauzerlar buning o'rniga proxy.ts dagi CSP frame-ancestors'ga qaraydi (Yandex Metrika xaritasi uchun ruxsat)
   { key: "X-Frame-Options", value: "DENY" },
   // Boshqa saytlarga to'liq manzil (token, parametrlar) yuborilmaydi
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

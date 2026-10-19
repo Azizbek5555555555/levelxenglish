@@ -48,6 +48,20 @@ function canonicalRedirect(request: NextRequest): NextResponse | null {
  * Har so'rovda yangi tasodifiy `nonce` yaratiladi: faqat shu kalitga ega skriptlar ishlaydi,
  * shuning uchun saytga qandaydir yo'l bilan tiqilgan begona <script> bajarilmaydi (XSS himoyasi).
  */
+/** Yandex Metrika: hisoblagich skripti, statistikani yuborish va Vebvizor */
+const YANDEX_MC = "https://mc.yandex.ru https://mc.yandex.com https://mc.webvisor.org https://mc.webvisor.com";
+/** Metrika bosishlar xaritasi va Vebvizorni ko'rsatish uchun saytni o'z oynasida ochadi */
+const YANDEX_FRAMERS = [
+  "https://metrika.yandex.ru",
+  "https://metrika.yandex.uz",
+  "https://metrika.yandex.by",
+  "https://metrika.yandex.kz",
+  "https://metrika.yandex.com",
+  "https://metrika.yandex.com.tr",
+  "https://webvisor.com",
+  "https://*.webvisor.com",
+].join(" ");
+
 function contentSecurityPolicy(nonce: string, request: NextRequest): string {
   let supabase = "https://*.supabase.co";
   try {
@@ -58,22 +72,25 @@ function contentSecurityPolicy(nonce: string, request: NextRequest): string {
   const supabaseWs = supabase.replace(/^http/, "ws");
   const dev = process.env.NODE_ENV === "development";
   const https = (request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol).startsWith("https");
+  // Admin panelni hech kim (Metrika ham) o'z oynasida ocha olmaydi
+  const staffPage = STAFF_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
 
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    // Hostlar faqat 'strict-dynamic'ni bilmaydigan eski brauzerlar uchun
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://mc.yandex.ru https://yastatic.net${dev ? " 'unsafe-eval'" : ""}`,
     // React `style={{...}}` atributlari va next/font uslublari uchun
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com ${supabase}`,
+    `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com ${supabase} ${YANDEX_MC}`,
     "font-src 'self' data:",
-    `connect-src 'self' ${supabase} ${supabaseWs}`,
+    `connect-src 'self' ${supabase} ${supabaseWs} ${YANDEX_MC} wss://mc.yandex.ru wss://mc.yandex.com`,
     `media-src 'self' blob: ${supabase}`,
     "worker-src 'self' blob:",
-    "frame-src 'none'",
+    `frame-src blob: ${YANDEX_MC}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    staffPage ? "frame-ancestors 'none'" : `frame-ancestors 'self' ${YANDEX_FRAMERS}`,
     ...(https ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 }
