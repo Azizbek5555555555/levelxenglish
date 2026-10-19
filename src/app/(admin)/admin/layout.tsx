@@ -50,8 +50,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const name = profile.full_name ?? profile.email ?? "Admin";
 
+  // ym-hide-content: Yandex Metrika Vebvizori admin paneldagi matnni yozib olmaydi
   return (
-    <div className="adm">
+    <div className="adm ym-hide-content">
       <div className="adm-frame">
         <div className="adm-glow" aria-hidden />
         <header className="adm-top">

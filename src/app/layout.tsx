@@ -8,6 +8,7 @@ import { THEME_COLOR } from "@/lib/theme";
 import { I18nProvider } from "@/i18n/client";
 import { CursorFollower } from "@/components/motion/CursorFollower";
 import { Splash } from "@/components/motion/Loader";
+import { YandexMetrika } from "@/components/layout/YandexMetrika";
 import "./globals.css";
 
 const inter = Inter({
@@ -72,6 +73,10 @@ export async function generateMetadata(): Promise<Metadata> {
     locale: t.locale === "en" ? "en_US" : "uz_UZ",
   },
   robots: { index: true, follow: true },
+  // Yandex Webmaster → "Meta-teg" usuli: kod Railway → Variables → YANDEX_VERIFICATION da
+  ...(process.env.YANDEX_VERIFICATION?.trim()
+    ? { verification: { yandex: process.env.YANDEX_VERIFICATION.trim() } }
+    : {}),
   };
 }
 
@@ -132,6 +137,7 @@ export default async function RootLayout({
         <Splash label={locale === "en" ? "Loading" : "Yuklanmoqda"} nonce={nonce} />
         <I18nProvider locale={locale}>{children}</I18nProvider>
         <CursorFollower />
+        <YandexMetrika nonce={nonce} />
       </body>
     </html>
   );
