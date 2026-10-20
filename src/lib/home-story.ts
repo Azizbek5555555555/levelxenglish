@@ -72,11 +72,11 @@ export function storyChapters(stats: SiteStats, t: T): StoryChapter[] {
     {
       id: "name",
       range: [0.12, 0.26],
-      eyebrow: t("01 · Ustozingiz", "01 · Your teacher"),
-      title: t("Sizni C1 darajali ustoz tayyorlaydi", "You are coached by a C1-certified teacher"),
+      eyebrow: t("01 · Maqsad", "01 · The goal"),
+      title: t("Sertifikatga sizning ismingiz yoziladi", "Your name goes on the certificate"),
       body: t(
-        "Abduxalilov Shokirjon (Mr. Shokir) — rasmiy Multilevel sertifikati: C1, umumiy 69 ball. Writing va Speaking ishlaringizni aynan u tekshiradi.",
-        "Abduxalilov Shokirjon (Mr. Shokir) holds an official Multilevel certificate: C1, 69 overall. He is the one who checks your Writing and Speaking.",
+        "Rasmiy Multilevel sertifikati mana shunday ko'rinadi. Biz bilan tayyorlaning — Writing va Speaking ishlaringizni C1 darajali ustoz tekshiradi.",
+        "This is what the official Multilevel certificate looks like. Prepare with us — a C1-certified teacher checks your Writing and Speaking.",
       ),
     },
     {
@@ -188,8 +188,8 @@ export function storyChapters(stats: SiteStats, t: T): StoryChapter[] {
 }
 
 /* -------------------------------------------------------------------------
-   Hero sertifikati — ustozning haqiqiy Multilevel sertifikati
-   (public/design/cert-c1.jpg, 1120×1586). Joylar rasmga nisbatan foizda:
+   Hero sertifikati — rasmiy Multilevel sertifikati namunasi (shaxsiy ma'lumotsiz)
+   (public/design/cert-sample.jpg, 1120×1586). Joylar rasmga nisbatan foizda:
    x, y — chap yuqori burchak, w, h — eni va bo'yi.
    ------------------------------------------------------------------------- */
 export type SkillKey = "listening" | "reading" | "writing" | "speaking";
@@ -202,10 +202,10 @@ export interface CertRect {
 }
 
 export const CERT = {
-  src: "/design/cert-c1.jpg",
+  src: "/design/cert-sample.jpg",
   /** Rasm proporsiyasi (bo'y / en) */
   ratio: 1586 / 1120,
-  name: { x: 37.5, y: 48.3, w: 14.7, h: 5.9 },
+  name: { x: 37.5, y: 48.3, w: 17.9, h: 5.9 },
   photo: { x: 78.57, y: 42.69, w: 13.39, h: 11.66 },
   level: { x: 77.77, y: 57.88, w: 14.29, h: 3.09 },
   overall: { x: 82.95, y: 62.8, w: 7.77, h: 4.35 },
@@ -218,18 +218,18 @@ export const CERT = {
   } satisfies Record<SkillKey, CertRect>,
   /** Ism qatorlari (marker bilan bo'yaladi), rasmga nisbatan foizda */
   nameLines: [
-    { y: 48.4, w: 12.4 },
-    { y: 50.6, w: 10.0 },
-    { y: 52.7, w: 14.6 },
+    { y: 48.4, w: 13.9 },
+    { y: 50.6, w: 9.2 },
+    { y: 52.7, w: 17.8 },
   ],
 } as const;
 
 export const CERT_TEXT = {
   alt: {
-    uz: "Mr. Shokirning rasmiy Multilevel sertifikati: C1, umumiy ball 69",
-    en: "Mr. Shokir's official Multilevel certificate: C1, overall score 69",
+    uz: "Rasmiy Multilevel sertifikati namunasi: C1, umumiy ball 68",
+    en: "Sample of the official Multilevel certificate: C1, overall score 68",
   },
-  teacher: { uz: "Ustozingiz", en: "Your teacher" },
+  teacher: { uz: "Bu yerda — siz", en: "That's you" },
   note: { uz: "Coherence a'lo! Murakkab gaplarni mashq qiling.", en: "Great coherence! Practise complex sentences." },
   noteLabel: { uz: "O'qituvchi izohi", en: "Teacher's comment" },
   verified: { uz: "QR orqali tekshiriladi", en: "Verifiable via QR" },
@@ -320,7 +320,7 @@ export const KEYFRAMES: Record<string, Keyframe[]> = {
     { p: 0.905, s: 0.94, r: 8, o: 1 },
     { p: 0.92, s: 1, r: 8, o: 1 },
   ],
-  // "Ustozingiz" yorlig'i — rasm yonida, ism yozilgach paydo bo'ladi
+  // "Bu yerda — siz" yorlig'i — rasm yonida, ism yozilgach paydo bo'ladi
   tag: [
     { p: 0.19, y: 0.02, r: -10, s: 0.7, o: 0 },
     { p: 0.23, y: 0, r: -6, s: 1, o: 1 },
