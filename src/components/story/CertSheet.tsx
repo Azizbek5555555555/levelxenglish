@@ -43,7 +43,7 @@ const TICKS: { key: SkillKey; draw: string }[] = [
 ];
 
 /**
- * Bosh sahifa hero'sidagi haqiqiy sertifikat (Mr. Shokir, C1).
+ * Bosh sahifa hero'sidagi rasmiy Multilevel sertifikati namunasi (C1, umumiy 68).
  * Ustidagi animatsiyalar HomeStory dvigateli orqali skroll bilan boshqariladi:
  * data-reveal (marker / qo'lyozma), data-pen (ruchka), data-hl (lupa),
  * data-draw (chiziladigan belgilar), data-kf (muhr, yorliq, qog'oz, QR).
@@ -90,7 +90,7 @@ export function CertSheet() {
         <Marker />
       </div>
 
-      {/* "Ustozingiz" yorlig'i — ism va rasm orasida, strelka rasmga qaraydi */}
+      {/* "Bu yerda — siz" yorlig'i — ism va rasm orasida, strelka rasmga qaraydi */}
       <div
         data-kf="tag"
         data-basis="sheet"
@@ -194,9 +194,9 @@ function Stamp() {
           CEFR LEVEL
         </textPath>
       </text>
-      <text fill={color} fontSize="8" fontWeight="700" letterSpacing="1.6">
+      <text fill={color} fontSize="7.2" fontWeight="700" letterSpacing="0.9">
         <textPath href="#cert-arc-bottom" startOffset="50%" textAnchor="middle">
-          MR. SHOKIR · 69/75
+          LEVELXENGLISH · 68/75
         </textPath>
       </text>
       <text

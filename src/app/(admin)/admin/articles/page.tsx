@@ -15,8 +15,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminArticlesPage() {
-  const articles = await listAllArticles();
+export default async function AdminArticlesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
+  const [articles, { new: openNew }] = await Promise.all([listAllArticles(), searchParams]);
 
   return (
     <div className="space-y-6">
@@ -29,8 +33,9 @@ export default async function AdminArticlesPage() {
 
       <Collapsible
         title="➕ Yangi maqola qo'shish"
-        subtitle="Matn, yangi so'zlar va Reading savollari"
+        subtitle="Yaratilgach saytda General English → Maqolalar bo'limida o'zi chiqadi"
         tone="accent"
+        defaultOpen={openNew === "1" || articles.length === 0}
       >
         <AdminForm
           action={upsertArticleAction}

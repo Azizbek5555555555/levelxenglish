@@ -56,13 +56,22 @@ export default async function AdminArticleDetailPage({
           <p className="text-sm text-muted mt-1 font-mono">/{article.slug}</p>
         </div>
 
-        <Link
-          href={`/boost/articles/${article.slug}`}
-          className="rounded-lg border border-line bg-[var(--bg-subtle)]
-                     px-3 py-2 text-sm font-semibold hover:border-brand-400 transition-colors"
-        >
-          👁 Saytda ko&apos;rish
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/articles?new=1"
+            className="rounded-lg border border-brand-400/50 bg-brand-400/10
+                       px-3 py-2 text-sm font-semibold text-brand-400 hover:bg-brand-400/20 transition-colors"
+          >
+            ➕ Yangi maqola
+          </Link>
+          <Link
+            href={`/boost/articles/${article.slug}`}
+            className="rounded-lg border border-line bg-[var(--bg-subtle)]
+                       px-3 py-2 text-sm font-semibold hover:border-brand-400 transition-colors"
+          >
+            👁 Saytda ko&apos;rish
+          </Link>
+        </div>
       </div>
 
       <Collapsible

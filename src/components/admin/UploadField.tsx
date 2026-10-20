@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Image as ImageIcon, Music, Trash2 } from "react-feather";
 import { createClient } from "@/lib/supabase/client";
 import { compressAudio, formatMb, needsCompression } from "@/lib/audio-compress";
 import { IMAGE_MAX_INPUT_BYTES, IMAGE_TYPES, imageExtension, prepareImage } from "@/lib/image-prepare";
@@ -160,11 +161,13 @@ export function UploadField({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>
-          {kind === "audio" ? "🎧" : "🖼"} {url ? "Almashtirish" : "Kompyuterdan yuklash"}
+          {kind === "audio" ? <Music size={14} aria-hidden /> : <ImageIcon size={14} aria-hidden />}
+          {url ? "Almashtirish" : "Kompyuterdan yuklash"}
         </Button>
         {url ? (
           <Button type="button" size="sm" variant="secondary" onClick={remove} disabled={busy}>
-            🗑 Olib tashlash
+            <Trash2 size={14} aria-hidden />
+            Olib tashlash
           </Button>
         ) : null}
       </div>
